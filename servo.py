@@ -41,14 +41,17 @@ def set_degree(channel, d):
     degree_pulse += int((servo_max - servo_min) / max_degree) * d
     pwm.set_pwm(channel, 0 ,degree_pulse)
 
-def change_mode
+def change_mode():
+    global current_mode
     if current_mode == "servo":
         current_mode = "dc"
         print('DC Mode activated')
     else:
         current_mode = "servo"
         print('Servo Mode activated')
+   
 
+change_mode()
 for event in gamepad.read_loop():
     e_code=event.code
     e_type=event.type
