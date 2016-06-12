@@ -49,7 +49,23 @@ def change_mode():
     else:
         current_mode = "servo"
         print('Servo Mode activated')
-   
+def left_joystick_lr(e_value): #left joystick left-right
+    global current_mode
+    if current_mode == "servo":
+        e_value = e_value * -1 # because of reverse move
+        servo_pos=str(convertAxis (e_value + 32768, 32768 * 2)) # adding another 32768 because it has negative values
+        pwm.set_pwm(0, 0, int(servo_pos))
+    else:
+        if e_value > 0:
+            GPIO.output(engine1B, GPIO.LOW)
+            GPIO.output(engine2B, GPIO.LOW)
+            GPIO.output(engine1F, GPIO.HIGH)
+            GPIO.output(engine2F, GPIO.HIGH)
+        else:
+            GPIO.output(engine1F, GPIO.LOW)
+            GPIO.output(engine2F, GPIO.LOW)
+            GPIO.output(engine1B, GPIO.HIGH)
+            GPIO.output(engine2B, GPIO.HIGH)
 
 change_mode()
 for event in gamepad.read_loop():
@@ -62,9 +78,7 @@ for event in gamepad.read_loop():
     print("code: " + str(e_code) + ", type: " + str(e_type) + ", value: " + str(e_value) ) # for debugging
     if e_type == 3:
         if e_code == 0: #joystick left
-            e_value = e_value * -1 # because of reverse move
-            servo_pos=str(convertAxis (e_value + 32768, 32768 * 2)) # adding another 32768 because it has negative values
-            pwm.set_pwm(0, 0, int(servo_pos))
+            left_joystick_lr(e_value)
         elif e_code == 4: #up-down
             servo_pos=str(convertAxis (e_value + 32768, 32768 * 2)) # adding another 32768 because it has negative values
             pwm.set_pwm(1, 0, int(servo_pos))
