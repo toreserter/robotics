@@ -4,6 +4,14 @@ from __future__ import division
 import time
 import RPi.GPIO as GPIO
 from evdev import InputDevice, categorize, ecodes, KeyEvent
+
+import sys
+sys.path.append("./lib")
+import lcddriver
+
+lcd = lcddriver.lcd()
+lcd.lcd_clear()
+
 gamepad = InputDevice('/dev/input/event0')
 
 GPIO.setmode(GPIO.BCM)
@@ -45,27 +53,42 @@ def change_mode():
     global current_mode
     if current_mode == "servo":
         current_mode = "dc"
-        print('DC Mode activated')
+        lcd.lcd_clear()
+	lcd.lcd_display_string("Mode: DC", 1)
+ 	print('DC Mode activated')
     else:
         current_mode = "servo"
+	lcd.lcd_clear()
+	lcd.lcd_display_string("Mode: SERVO", 1)
         print('Servo Mode activated')
+def reset_motors():
+    global pinList
+    for i in pinList:
+    	GPIO.output(i, GPIO.LOW)	
 def left_joystick_lr(e_value): #left joystick left-right
-    global current_mode
+    global current_mode, engine1F, engine1B, engine2F, engine2B
     if current_mode == "servo":
         e_value = e_value * -1 # because of reverse move
         servo_pos=str(convertAxis (e_value + 32768, 32768 * 2)) # adding another 32768 because it has negative values
         pwm.set_pwm(0, 0, int(servo_pos))
     else:
         if e_value > 0:
-            GPIO.output(engine1B, GPIO.LOW)
-            GPIO.output(engine2B, GPIO.LOW)
+	    print("go fw")
+            #GPIO.output(engine1B, GPIO.LOW)
+            #GPIO.output(engine2B, GPIO.LOW)
             GPIO.output(engine1F, GPIO.HIGH)
             GPIO.output(engine2F, GPIO.HIGH)
-        else:
-            GPIO.output(engine1F, GPIO.LOW)
-            GPIO.output(engine2F, GPIO.LOW)
+        elif e_value < 0:
+	    print("go bck")
+            #GPIO.output(engine1F, GPIO.LOW)
+            #GPIO.output(engine2F, GPIO.LOW)
             GPIO.output(engine1B, GPIO.HIGH)
             GPIO.output(engine2B, GPIO.HIGH)
+	else:
+	    GPIO.output(engine1B, GPIO.LOW)
+            GPIO.output(engine2B, GPIO.LOW)
+	    GPIO.output(engine1F, GPIO.LOW)
+            GPIO.output(engine2F, GPIO.LOW)
 
 change_mode()
 for event in gamepad.read_loop():
@@ -76,6 +99,9 @@ for event in gamepad.read_loop():
         #GPIO.output(i, GPIO.LOW) #reset engines
     #print(str(e_type)+' - '+str(e_code)+' - '+str(e_value))
     print("code: " + str(e_code) + ", type: " + str(e_type) + ", value: " + str(e_value) ) # for debugging
+    #lcd.lcd_display_string("Code: " + str(e_code), 1)
+    #lcd.lcd_display_string("Type: " + str(e_type), 2)
+    #lcd.lcd_display_string("Value: " + str(e_value), 3)
     if e_type == 3:
         if e_code == 0: #joystick left
             left_joystick_lr(e_value)
@@ -99,6 +125,9 @@ for event in gamepad.read_loop():
     elif e_type == 1:
         if e_code == 304 and e_value == 1: # A button switch servo - dc motors
             change_mode()
+	    reset_motors()
+	elif e_code == 305 and e_value == 1: # B
+	    reset_motors()
 
 
 
